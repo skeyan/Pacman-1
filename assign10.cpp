@@ -2,7 +2,7 @@
 // Course: CSE 2050
 // Project: assign10
 
-#include <stdlib.h>
+#include <cstdlib>
 #include <vector>
 #include <deque>
 #include <windows.h>
@@ -10,7 +10,8 @@
 #include <iostream>
 #include <string>
 #define _USE_MATH_DEFINES
-#include <math.h>
+#include <cmath>
+#define M_PI 3.14159265358979323846
 using namespace std;
 
 static bool replay = false; //check if starts a new game
@@ -19,10 +20,24 @@ static float squareSize = 50.0; //size of one square on the game
 static float xIncrement = 0; // x movement on pacman
 static float yIncrement = 0; // y movement on pacman
 static int rotation = 0; // orientation of pacman
-float* monster1 = new float[3] {10.5, 8.5, 1.0}; //coordinates and direction of first monster
-float* monster2 = new float[3] {13.5, 1.5, 2.0}; //coordinates and direction of second monster
-float* monster3 = new float[3] {4.5, 6.5, 3.0}; //coordinates and direction of third monster
-float* monster4 = new float[3] {2.5, 13.5, 4.0}; //coordinates and direction of fourth monster
+
+/* Change: Create containers to hold multiple of each monster. */
+vector<float*> inkyGroup;
+vector<float*> blinkyGroup;
+vector<float*> pinkyGroup;
+vector<float*> clydeGroup;
+vector<vector<float*>> monsters;
+/* End Change */
+
+float* inky = new float[3] {10.5, 8.5, 1.0}; //coordinates and direction of first monster
+float* blinky = new float[3] {13.5, 1.5, 2.0}; //coordinates and direction of second monster
+float* pinky = new float[3] {4.5, 6.5, 3.0}; //coordinates and direction of third monster
+float* clyde = new float[3] {2.5, 13.5, 4.0}; //coordinates and direction of fourth monster
+
+/* Change: Keep track of target (max) number of monsters. */
+int maxMonsters = 0;
+/* End Change */
+
 static vector<int> border = { 0, 0, 15, 1, 15, 15, 14, 1, 0, 14, 15, 15, 1, 14, 0, 0 }; //coordinates of the border walls
 
 //coordinates of the obstacles (divided into 3 for clarity)
@@ -33,6 +48,39 @@ static deque<float> food = { 1.5, 1.5, 1.5, 2.5, 1.5, 3.5, 1.5, 4.5, 1.5, 5.5, 1
 static vector<vector<bool>> bitmap; // 2d image of which squares are blocked and which are clear for pacman to move in 
 bool* keyStates = new bool[256]; // record of all keys pressed 
 int points = 0; // total points collected
+
+
+/* Change: Existing monsters  duplicate every 32 seconds */
+void spawnMonsters(int time) {
+	cout << "SPAWN MONSTERS" << endl;
+
+	int currentsize = inkyGroup.size();
+	for (int i = 0; i < currentsize; i++) {
+		float* clone = new float[3] {inkyGroup[i][0], inkyGroup[i][1], inkyGroup[i][2] };
+		inkyGroup.push_back(clone);
+	}
+	currentsize = blinkyGroup.size();
+	for (int i = 0; i < currentsize; i++) {
+		float* clone = new float[3]{ blinkyGroup[i][0], blinkyGroup[i][1], blinkyGroup[i][2] };
+		blinkyGroup.push_back(clone);
+	}
+	currentsize = pinkyGroup.size();
+	for (int i = 0; i < currentsize; i++) {
+		float* clone = new float[3]{ pinkyGroup[i][0], pinkyGroup[i][1], pinkyGroup[i][2] };
+		pinkyGroup.push_back(clone);
+	}
+	currentsize = clydeGroup.size();
+	for (int i = 0; i < currentsize; i++) {
+		float* clone = new float[3]{ clydeGroup[i][0], clydeGroup[i][1], clydeGroup[i][2] };
+		clydeGroup.push_back(clone);
+	}
+
+	/* Change: Reset timer to spawn monsters again */
+	int current_time = glutGet(GLUT_ELAPSED_TIME);
+	glutTimerFunc(30000, spawnMonsters, current_time);
+	/* End Change */
+}
+/* End Change */
 
 //Initializes the game with the appropiate information 
 void init(void){
@@ -59,6 +107,20 @@ void init(void){
 	bitmap.push_back({ true, false, true, true, true, true, false, true, true, false, true, true, true, false, true });
 	bitmap.push_back({ true, false, false, false, false, false, false, false, false, false, false, false, false, false, true });
 	bitmap.push_back({ true, true, true, true, true, true, true, true, true, true, true, true, true, true, true });
+
+	/* Change: Add the first four original monsters to the containers. */
+	inkyGroup.push_back(inky);
+	blinkyGroup.push_back(blinky);
+	pinkyGroup.push_back(pinky);
+	clydeGroup.push_back(clyde);
+	monsters = { inkyGroup, blinkyGroup, pinkyGroup, clydeGroup };
+	maxMonsters = (inkyGroup.size() + blinkyGroup.size() + pinkyGroup.size() + clydeGroup.size()) * 32;
+	/* End Change */
+
+	/* Change: Timer to spawn monsters */
+	int current_time = glutGet(GLUT_ELAPSED_TIME);
+	glutTimerFunc(30000, spawnMonsters, current_time);
+	/* End Change */
 }
 
 //Method to draw the obstacle course and the walls
@@ -236,15 +298,22 @@ void resetGame(){
 	xIncrement = 0;
 	yIncrement = 0; 
 	rotation = 0;
-	monster1 = new float[3] {10.5, 8.5, 1.0};
-	monster2 = new float[3] {13.5, 1.5, 2.0};
-	monster3 = new float[3] {4.5, 6.5, 3.0};
-	monster4 = new float[3] {2.5, 13.5, 4.0};
+	inky = new float[3] {10.5, 8.5, 1.0};
+	blinky = new float[3] {13.5, 1.5, 2.0};
+	pinky = new float[3] {4.5, 6.5, 3.0};
+	clyde = new float[3] {2.5, 13.5, 4.0};
 	points = 0;
 	for (int i = 0; i < 256; i++){
 		keyStates[i] = false;
 	}
 	food = { 1.5, 1.5, 1.5, 2.5, 1.5, 3.5, 1.5, 4.5, 1.5, 5.5, 1.5, 6.5, 1.5, 7.5, 1.5, 8.5, 1.5, 9.5, 1.5, 10.5, 1.5, 11.5, 1.5, 12.5, 1.5, 13.5, 2.5, 1.5, 2.5, 6.5, 2.5, 9.5, 2.5, 13.5, 3.5, 1.5, 3.5, 2.5, 3.5, 3.5, 3.5, 4.5, 3.5, 6.5, 3.5, 8.5, 3.5, 9.5, 3.5, 10.5, 3.5, 11.5, 3.5, 13.5, 4.5, 1.5, 4.5, 4.5, 4.5, 5.5, 4.5, 6.5, 4.5, 7.5, 4.5, 8.5, 4.5, 11.5, 4.5, 12.5, 4.5, 13.5, 5.5, 1.5, 5.5, 2.5, 5.5, 5.5, 5.5, 10.5, 5.5, 11.5, 5.5, 13.5, 6.5, 2.5, 6.5, 3.5, 6.5, 4.5, 6.5, 5.5, 6.5, 7.5, 6.5, 10.5, 6.5, 13.5, 7.5, 5.5, 7.5, 6.5, 7.5, 7.5, 7.5, 9.5, 7.5, 10.5, 7.5, 11.5, 7.5, 12.5, 7.5, 13.5, 8.5, 2.5, 8.5, 3.5, 8.5, 4.5, 8.5, 5.5, 8.5, 7.5, 8.5, 10.5, 8.5, 13.5, 9.5, 1.5, 9.5, 2.5, 9.5, 5.5, 9.5, 10.5, 9.5, 11.5, 9.5, 13.5, 10.5, 1.5, 10.5, 4.5, 10.5, 5.5, 10.5, 6.5, 10.5, 7.5, 10.5, 8.5, 10.5, 11.5, 10.5, 12.5, 10.5, 13.5, 11.5, 1.5, 11.5, 2.5, 11.5, 3.5, 11.5, 4.5, 11.5, 5.5, 11.5, 6.5, 11.5, 8.5, 11.5, 9.5, 11.5, 10.5, 11.5, 11.5, 11.5, 13.5, 12.5, 1.5, 12.5, 6.5, 12.5, 9.5, 12.5, 13.5, 13.5, 1.5, 13.5, 2.5, 13.5, 3.5, 13.5, 4.5, 13.5, 5.5, 13.5, 6.5, 13.5, 7.5, 13.5, 8.5, 13.5, 9.5, 13.5, 10.5, 13.5, 11.5, 13.5, 12.5, 13.5, 13.5 };
+	
+	/* Change: Reset containers */
+	inkyGroup = { inky };
+	blinkyGroup = { blinky };
+	pinkyGroup = { pinky };
+	clydeGroup = { clyde };
+	/* End Change */
 }
 
 //Method to update the movement of the pacman according to the movement keys pressed
@@ -296,34 +365,56 @@ void keyOperations(){
 	}
 }
 
+/* Change: Method to check for Pacman vaccinating monsters */
 //Method to check if the game is over
 void gameOver(){
-	int pacmanX = (int)(1.5 + xIncrement);
-	int pacmanY = (int)(1.5 + yIncrement);
-	int monster1X = (int)(monster1[0]);
-	int monster1Y = (int)(monster1[1]);
-	int monster2X = (int)(monster2[0]);
-	int monster2Y = (int)(monster2[1]);
-	int monster3X = (int)(monster3[0]);
-	int monster3Y = (int)(monster3[1]);
-	int monster4X = (int)(monster4[0]);
-	int monster4Y = (int)(monster4[1]);
-	if (pacmanX == monster1X && pacmanY == monster1Y){
-		over = true;
-	}
-	if (pacmanX == monster2X && pacmanY == monster2Y){
-		over = true;
-	}
-	if (pacmanX == monster3X && pacmanY == monster3Y){
-		over = true;
-	}
-	if (pacmanX == monster4X && pacmanY == monster4Y){
-		over = true;
-	}
 	if (points == 106){
 		over = true;
 	}
+	if ((blinkyGroup.size() + inkyGroup.size() + pinkyGroup.size() + clydeGroup.size()) >= maxMonsters) {
+		over = true;
+	}
 }
+
+void vaccinateMonsters() {
+	int pacmanX = (int)(1.5 + xIncrement);
+	int pacmanY = (int)(1.5 + yIncrement);
+
+	for (int i = 0; i < inkyGroup.size(); i++) {
+		int x = (int)(inkyGroup[i][0]);
+		int y = (int)(inkyGroup[i][1]);
+		if (pacmanX == x && pacmanY == y) {
+			inkyGroup.erase(inkyGroup.begin() + i);
+			cout << "Inky collide: erase" << endl;
+		}
+	}
+	for (int i = 0; i < blinkyGroup.size(); i++) {
+		int x = (int)(blinkyGroup[i][0]);
+		int y = (int)(blinkyGroup[i][1]);
+		if (pacmanX == x && pacmanY == y) {
+			blinkyGroup.erase(blinkyGroup.begin() + i);
+			cout << "Blinky collide: erase" << endl;
+		}
+	}
+	for (int i = 0; i < pinkyGroup.size(); i++) {
+		int x = (int)(pinkyGroup[i][0]);
+		int y = (int)(pinkyGroup[i][1]);
+		if (pacmanX == x && pacmanY == y) {
+			pinkyGroup.erase(pinkyGroup.begin() + i);
+			cout << "Pinky collide: erase" << endl;
+		}
+	}
+	for (int i = 0; i < clydeGroup.size(); i++) {
+		int x = (int)(clydeGroup[i][0]);
+		int y = (int)(clydeGroup[i][1]);
+		if (pacmanX == x && pacmanY == y) {
+			clydeGroup.erase(clydeGroup.begin() + i);
+			cout << "Clide collide: erase" << endl;
+		}
+	}
+}
+/* End Change */
+
 
 //Method to display the results of the game at the ends
 void resultsDisplay(){
@@ -415,19 +506,40 @@ void display(){
 	keyOperations();
 	glClear(GL_COLOR_BUFFER_BIT);
 	gameOver();
+	vaccinateMonsters();
 	if (replay){
 		if (!over){
 			drawLaberynth();
 			drawFood((1.5 + xIncrement) * squareSize, (1.5 + yIncrement) * squareSize);
 			drawPacman(1.5 + xIncrement, 1.5 + yIncrement, rotation);
-			updateMonster(monster1, 1);
-			updateMonster(monster2, 2);
-			updateMonster(monster3, 3);
-			updateMonster(monster4, 4);
-			drawMonster(monster1[0], monster1[1], 0.0, 1.0, 1.0); //cyan
-			drawMonster(monster2[0], monster2[1], 1.0, 0.0, 0.0); //red
-			drawMonster(monster3[0], monster3[1], 1.0, 0.0, 0.6); //magenta
-			drawMonster(monster4[0], monster4[1], 1.0, 0.3, 0.0); //orange
+
+			/* Change: Update and Draw all instances of the monsters */
+			for (int i = 0; i < inkyGroup.size(); i++) {
+				updateMonster(inkyGroup[i], 1);
+			}
+			for (int i = 0; i < blinkyGroup.size(); i++) {
+				updateMonster(blinkyGroup[i], 2);
+			}
+			for (int i = 0; i < pinkyGroup.size(); i++) {
+				updateMonster(pinkyGroup[i], 3);
+			}
+			for (int i = 0; i < clydeGroup.size(); i++) {
+				updateMonster(clydeGroup[i], 4);
+			}
+
+			for (int i = 0; i < inkyGroup.size(); i++) {
+				drawMonster(inkyGroup[i][0], inkyGroup[i][1], 0.0, 1.0, 1.0); //cyan
+			}
+			for (int i = 0; i < blinkyGroup.size(); i++) {
+				drawMonster(blinkyGroup[i][0], blinkyGroup[i][1], 1.0, 0.0, 0.0); //red
+			}
+			for (int i = 0; i < pinkyGroup.size(); i++) {
+				drawMonster(pinkyGroup[i][0], pinkyGroup[i][1], 1.0, 0.0, 0.6); //magenta
+			}
+			for (int i = 0; i < clydeGroup.size(); i++) {
+				drawMonster(clydeGroup[i][0], clydeGroup[i][1], 1.0, 0.3, 0.0); //orange
+			}
+			/* End Change */
 		}
 		else {
 			resultsDisplay();
@@ -467,6 +579,7 @@ int main(int argc, char** argv){
 	glutKeyboardUpFunc(keyUp);
 
 	//run the game
+	cout << "Initializing" << endl;
 	init();
 	glutMainLoop();
 	return 0;
